@@ -1,6 +1,6 @@
 /** Chemins des médias livrés, avec version de cache. */
 
-export const ASSET_VERSION = "20261106-media1";
+export const ASSET_VERSION = "20261106-train1";
 
 export function assetUrl(path) {
   return `${path}?v=${ASSET_VERSION}`;

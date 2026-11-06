@@ -11,13 +11,15 @@ Jeu original (thème labo de hacker néon). Inspiré par la *mécanique* de déd
 
 Le son est **coupé par défaut**. Un bouton « Son » (accessible, préférence mémorisée) l'allume ; la lecture part seulement après un clic.
 
+À l'accueil, **Mission d'entraînement** guide une partie fixe (FACILE1) étape par étape : tes records ne bougent pas, et le fond/jingle de partie notée ne part pas. En fin de partie (victoire ou échec, entraînement compris), **Comprendre la solution** sépare la lecture après révélation des règles de ce que tes requêtes prouvaient vraiment — y compris si tu n'as posé aucune question.
+
 Pour lancer les tests (Node, sans framework) :
 
 ```bash
 npm test
 ```
 
-(ou `node test/generator.test.js`, `node test/assets.test.js`, `node test/audio.test.js`)
+(ou `node test/generator.test.js`, `node test/assets.test.js`, `node test/audio.test.js`, `node test/explain.test.js`, `node test/tutorial.test.js`)
 
 Aucun build n'est requis : ouvre `index.html` via un petit serveur local, ou joue en ligne.
 

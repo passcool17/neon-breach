@@ -52,9 +52,10 @@ function persistBests(bests) {
   }
 }
 
-export function createGame({ seed, difficulty }) {
+export function createGame({ seed, difficulty, tutorial = false }) {
   const cleanSeed = normalizeSeed(seed || randomSeedString());
   const puzzle = generatePuzzle(cleanSeed, difficulty);
+  const isTutorial = Boolean(tutorial);
   return {
     seed: cleanSeed,
     difficulty,
@@ -72,8 +73,9 @@ export function createGame({ seed, difficulty }) {
     phase: "play",
     score: null,
     isNewRecord: false,
-    record: loadBests()[difficulty] || null,
+    record: isTutorial ? null : loadBests()[difficulty] || null,
     message: "",
+    tutorial: isTutorial,
   };
 }
 
@@ -167,6 +169,12 @@ export function launchHack(state) {
   if (win) {
     state.phase = "won";
     state.score = state.rounds + state.queries;
+    if (state.tutorial) {
+      state.isNewRecord = false;
+      state.record = null;
+      state.message = "";
+      return { ok: true, win: true };
+    }
     const result = saveBestIfBetter(state);
     state.isNewRecord = result.isNew;
     state.record = result.best;

@@ -23,6 +23,8 @@ import { DIGIT_MAX, DIGIT_MIN, SLOTS, formatCode } from "./criteria.js";
 import { randomSeedString } from "./rng.js";
 import { IMAGES, applySceneBackground, assetUrl, firewallIcon } from "./assets.js";
 import { createAudioController } from "./audio.js";
+import { evidenceFromLog, hindsightSteps, isExplanationAllowed } from "./explain.js";
+import { applyTutorial, coachCopy, createTutorialSession, resetTutorial } from "./tutorial.js";
 
 function esc(value) {
   return String(value)
@@ -45,8 +47,11 @@ export function mount(root) {
     seedInput: "",
     difficulty: "facile",
     copied: false,
+    explain: false,
   };
   let state = null;
+  let session = null;
+  let lastCoachStep = null;
   const audio = createAudioController();
   applySceneBackground();
 
@@ -76,11 +81,13 @@ export function mount(root) {
       state = createGame({ seed, difficulty });
       ui.view = "play";
       ui.howto = false;
+      ui.explain = false;
       ui.toast = "";
       ui.copied = false;
       const next = new URL(window.location.href);
       next.search = buildShareSearch(state.seed, state.difficulty).replace(/^\?/, "");
       history.replaceState({}, "", next);
+      session = null;
       audio.enterPlay();
     } catch (err) {
       console.error(err);
@@ -91,11 +98,34 @@ export function mount(root) {
     paint();
   }
 
+  function startTutorial() {
+    session = createTutorialSession();
+    state = session.game;
+    ui.view = "play";
+    ui.howto = false;
+    ui.explain = false;
+    ui.toast = "";
+    lastCoachStep = null;
+    paint();
+  }
+
+  function resetMission() {
+    if (!session) return;
+    resetTutorial(session);
+    state = session.game;
+    ui.explain = false;
+    lastCoachStep = null;
+    paint();
+  }
+
   function goMenu() {
     state = null;
+    session = null;
     ui.view = "menu";
     ui.howto = false;
+    ui.explain = false;
     ui.toast = "";
+    lastCoachStep = null;
     audio.enterIdle();
     const next = new URL(window.location.href);
     next.search = "";
@@ -107,12 +137,49 @@ export function mount(root) {
     root.innerHTML = `${renderHeader()}${
       ui.view === "menu" ? renderMenu() : renderPlay()
     }${ui.howto ? renderHowto() : ""}${
+      session && session.step === "welcome" ? renderWelcome() : ""
+    }${session && session.quitPrompt ? renderQuit() : ""}${
       state && state.phase !== "play" ? renderEnd() : ""
-    }`;
+    }${ui.explain && state && isExplanationAllowed(state.phase) ? renderExplain() : ""}`;
+    focusCoachIfNeeded();
+  }
+
+  function focusCoachIfNeeded() {
+    if (!session) {
+      lastCoachStep = null;
+      return;
+    }
+    const key = `${session.step}:${session.quitPrompt ? "q" : ""}`;
+    if (key === lastCoachStep) return;
+    lastCoachStep = key;
+    let id = "coach-title";
+    if (session.quitPrompt) id = "quit-title";
+    else if (session.step === "welcome") id = "welcome-title";
+    else if (session.step === "done") return;
+    const el = document.getElementById(id);
+    if (el) el.focus();
+  }
+
+  function taughtClass(id) {
+    if (!session) return "";
+    const map = {
+      compose133: ["digit-pick-0-1"],
+      queryAB: ["verifier-A", "verifier-B", "query-btn"],
+      notebookAB: ["notebook"],
+      compose132: ["digit-pick-2-2"],
+      queryCD: ["verifier-C", "verifier-D", "query-btn"],
+      notebookCD: ["notebook"],
+      hack232: ["digit-pick-0-2", "hack-btn"],
+    };
+    return (map[session.step] || []).includes(id) ? " is-taught" : "";
   }
 
   function renderHeader() {
-    const playBits = state
+    const playBits = session
+      ? `<span class="badge" data-testid="difficulty-badge">Entraînement</span>
+         <button type="button" class="ghost" data-action="reset-tutorial" data-testid="btn-reset-tutorial">Recommencer la mission</button>
+         <button type="button" class="ghost" data-action="request-quit" data-testid="btn-quit-tutorial">Quitter</button>`
+      : state
       ? `<span class="badge" data-testid="difficulty-badge">${esc(difficultyLabel(state.difficulty))}</span>
          <span class="seed" data-testid="seed-display" title="Graine du casse-tête">graine ${esc(state.seed)}</span>
          <button type="button" class="ghost" data-action="copy" data-testid="btn-copy">${
@@ -165,6 +232,7 @@ export function mount(root) {
           data-testid="input-seed" placeholder="ex. K7P2MQ" value="${esc(ui.seedInput)}">
       </label>
       <button type="button" class="cta" data-action="start" data-testid="btn-start">Commencer l'intrusion</button>
+      <button type="button" class="ghost" data-action="start-tutorial" data-testid="btn-tutorial">Mission d'entraînement</button>
       ${toast}
       <section class="records">
         <h2>Meilleurs scores</h2>
@@ -177,14 +245,16 @@ export function mount(root) {
   function renderPlay() {
     const n = state.selected.length;
     const queryLabel = `Interroger les pare-feu (${n}/${MAX_QUERIES_PER_ROUND})`;
-    return `<main class="play" data-testid="play" data-seed="${esc(state.seed)}" data-difficulty="${esc(state.difficulty)}">
+    const coach = session && session.step !== "welcome" && state.phase === "play" ? renderCoach() : "";
+    return `<main class="play${session ? " has-coach" : ""}" data-testid="play" data-seed="${esc(state.seed)}" data-difficulty="${esc(state.difficulty)}">
+      ${coach}
       <section class="panel console">
         <h2>Code d'essai</h2>
         <div class="code-builder">${SLOTS.map(renderSlot).join("")}</div>
         <p class="code-preview" data-testid="code-preview">${renderColoredCode(state.testCode)}</p>
         <div class="actions">
-          <button type="button" class="cta" data-action="query" data-testid="query-btn">${esc(queryLabel)}</button>
-          <button type="button" class="danger" data-action="hack" data-testid="hack-btn">Lancer le piratage</button>
+          <button type="button" class="cta${taughtClass("query-btn")}" data-action="query" data-testid="query-btn">${esc(queryLabel)}</button>
+          <button type="button" class="danger${taughtClass("hack-btn")}" data-action="hack" data-testid="hack-btn">Lancer le piratage</button>
         </div>
         <p class="hint muted">Clique jusqu'à 3 pare-feu, interroge, note tes déductions. Quand t'es confident : piratage.</p>
         ${state.message ? `<p class="toast" data-testid="message">${esc(state.message)}</p>` : `<p class="toast" data-testid="message" hidden></p>`}
@@ -194,7 +264,7 @@ export function mount(root) {
         <h2>Pare-feu</h2>
         <div class="firewall-grid">${state.puzzle.verifiers.map(renderVerifier).join("")}</div>
       </section>
-      <section class="panel notebook" data-testid="notebook">
+      <section class="panel notebook${taughtClass("notebook")}" data-testid="notebook">
         <h2>Calepin</h2>
         <p class="muted">Barre ce que tu élimines. C'est juste pour toi — le serveur s'en fout.</p>
         ${renderNotebook()}
@@ -208,7 +278,7 @@ export function mount(root) {
     for (let d = DIGIT_MIN; d <= DIGIT_MAX; d++) {
       const on = current === d ? "is-on" : "";
       buttons.push(
-        `<button type="button" class="digit ${on}" data-action="set-digit" data-slot="${slot.index}" data-digit="${d}" data-testid="digit-pick-${slot.index}-${d}">${d}</button>`,
+        `<button type="button" class="digit ${on}${taughtClass(`digit-pick-${slot.index}-${d}`)}" data-action="set-digit" data-slot="${slot.index}" data-digit="${d}" data-testid="digit-pick-${slot.index}-${d}">${d}</button>`,
       );
     }
     return `<div class="slot ${slotClass(slot.index)}">
@@ -231,7 +301,7 @@ export function mount(root) {
     const iconTag = icon
       ? `<img class="fw-icon" src="${esc(assetUrl(icon))}" width="48" height="48" alt="" data-testid="verifier-${verifier.letter}-icon">`
       : "";
-    return `<button type="button" class="fw-card ${selected}" data-action="toggle-fw" data-index="${index}" data-testid="verifier-${verifier.letter}">
+    return `<button type="button" class="fw-card ${selected}${taughtClass(`verifier-${verifier.letter}`)}" data-action="toggle-fw" data-index="${index}" data-testid="verifier-${verifier.letter}">
       <span class="fw-head">${iconTag}<span class="fw-letter">Pare-feu ${esc(verifier.letter)}</span></span>
       <span class="fw-label">${esc(verifier.familyLabel)}</span>
       ${result}
@@ -293,6 +363,97 @@ export function mount(root) {
     return `<div class="nb-digits">${digitRows}</div>${critBlocks}`;
   }
 
+  function renderCoach() {
+    const copy = coachCopy(session);
+    return `<aside class="panel coach" data-testid="coach" aria-live="polite">
+      <p class="eyebrow">coach</p>
+      <h2 id="coach-title" tabindex="-1">${esc(copy.title)}</h2>
+      <p>${esc(copy.body)}</p>
+    </aside>`;
+  }
+
+  function renderWelcome() {
+    return `<div class="overlay" data-testid="tutorial-welcome">
+      <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
+        <h2 id="welcome-title" tabindex="-1">Mission d'entraînement</h2>
+        <p>Ici on joue un casse-tête déjà choisi, ensemble, une étape à la fois. Tes records ne bougent pas. Le but : voir comment les réponses des pare-feu éliminent des possibilités — sans qu'on te révèle les règles cachées.</p>
+        <div class="actions">
+          <button type="button" class="cta" data-action="tutorial-continue" data-testid="btn-tutorial-continue">Continuer</button>
+          <button type="button" class="ghost" data-action="request-quit" data-testid="btn-welcome-quit">Quitter</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function renderQuit() {
+    return `<div class="overlay" data-testid="quit-tutorial">
+      <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="quit-title">
+        <h2 id="quit-title" tabindex="-1">Quitter l'entraînement ?</h2>
+        <p>Tu vas revenir à l'accueil. Rien n'est sauvegardé — c'est normal, cette mission ne compte pas.</p>
+        <div class="actions">
+          <button type="button" class="ghost" data-action="cancel-quit" data-testid="btn-stay-tutorial">Rester</button>
+          <button type="button" class="danger" data-action="confirm-quit" data-testid="btn-confirm-quit">Quitter</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function formatCodes(codes) {
+    return codes.map((code) => formatCode(code)).join(", ");
+  }
+
+  function renderExplain() {
+    const hinted = hindsightSteps(state.puzzle);
+    const evidence = evidenceFromLog(state.puzzle, state.log);
+    const hidden = hinted.steps
+      .map((step) => {
+        const leftover = step.remaining
+          ? ` Restent : ${esc(formatCodes(step.remaining))}.`
+          : "";
+        return `<li data-testid="explain-hidden-${esc(step.letter)}"><strong>Pare-feu ${esc(step.letter)}</strong> — ${esc(step.familyLabel)} : ${esc(step.chosenLabel)}. ${step.before} → ${step.after}.${leftover}</li>`;
+      })
+      .join("");
+    let evBody;
+    if (evidence.emptyLog) {
+      evBody = `<p data-testid="explain-empty-log">Tu n'as posé aucune question. La section ci-dessus explique les règles après révélation, pas une déduction en cours de partie.</p>`;
+    } else {
+      const items = evidence.queries
+        .map((q, i) => {
+          const mark = q.pass ? "✔" : "✖";
+          const eliminated = q.eliminated.length
+            ? q.eliminated.map((c) => c.label).join(", ")
+            : "rien";
+          const kept = q.kept.length ? q.kept.map((c) => c.label).join(", ") : "rien";
+          return `<li data-testid="explain-query-${i}"><strong>Manche ${q.round}</strong> — code ${esc(formatCode(q.code))} · ${esc(q.letter)} ${mark} : élimine ${esc(eliminated)} ; restent ${esc(kept)}</li>`;
+        })
+        .join("");
+      const leftover = evidence.leftoverCount == null
+        ? ""
+        : evidence.leftoverCount <= 15 && evidence.leftoverCodes
+          ? `Après tes requêtes, ${evidence.leftoverCount} code${evidence.leftoverCount > 1 ? "s" : ""} restai${evidence.leftoverCount > 1 ? "ent" : "t"} compatible${evidence.leftoverCount > 1 ? "s" : ""} : ${esc(formatCodes(evidence.leftoverCodes))}.`
+          : `Après tes requêtes, ${evidence.leftoverCount} code${evidence.leftoverCount > 1 ? "s" : ""} restai${evidence.leftoverCount > 1 ? "ent" : "t"} compatible${evidence.leftoverCount > 1 ? "s" : ""}.`;
+      evBody = `<ol class="explain-list">${items}</ol>
+        <p data-testid="explain-evidence-summary">${leftover}</p>`;
+    }
+    return `<div class="overlay" data-testid="explain-panel">
+      <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="explain-title">
+        <h2 id="explain-title" tabindex="-1">Comprendre la solution</h2>
+        <section data-testid="explain-hindsight">
+          <h3>Lecture après révélation des règles</h3>
+          <p class="warn">Cette section utilise les règles maintenant révélées — ce n'est pas « comment tu aurais dû déduire en cours de partie ».</p>
+          <ol class="explain-list">${hidden}</ol>
+        </section>
+        <section data-testid="explain-evidence">
+          <h3>Ce que tes requêtes prouvaient</h3>
+          ${evBody}
+        </section>
+        <div class="actions">
+          <button type="button" class="cta" data-action="close-explain" data-testid="btn-close-explain">Fermer</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
   function renderHowto() {
     return `<div class="overlay" data-testid="howto" role="dialog" aria-labelledby="howto-title">
       <div class="dialog">
@@ -312,11 +473,16 @@ export function mount(root) {
   function renderEnd() {
     const win = state.phase === "won";
     const testId = win ? "win-screen" : "lose-screen";
-    const title = win ? "Brèche ouverte !" : "Accès refusé";
-    const lead = win
+    const title = state.tutorial ? "Mission terminée" : win ? "Brèche ouverte !" : "Accès refusé";
+    const lead = state.tutorial
+      ? "Bien joué. Ça ne compte pas pour tes records — les parties normales, oui."
+      : win
       ? "T'as cracké le serveur. Bien joué, agent."
       : "Le serveur t'a grillé. Voici ce qu'il cachait.";
-    const score = win
+    const tutorialDone = Boolean(state.tutorial);
+    const score = tutorialDone
+      ? `<p class="score" data-testid="score">2 manches + 4 requêtes <span class="muted">(informatif — pas un record)</span></p>`
+      : win
       ? `<p class="score" data-testid="score">Score ${state.score} <span class="muted">(${state.rounds} manche${state.rounds > 1 ? "s" : ""} + ${state.queries} requête${state.queries > 1 ? "s" : ""})</span></p>
          <p class="muted">${
            state.isNewRecord
@@ -338,9 +504,13 @@ export function mount(root) {
         <p class="end-code">Code secret ${renderColoredCode(state.puzzle.solution)}</p>
         ${score}
         <div class="actions">
-          <button type="button" class="cta" data-action="replay" data-testid="btn-replay">Rejouer cette graine</button>
+          <button type="button" class="cta" data-action="open-explain" data-testid="btn-explain">Comprendre la solution</button>
+          ${state.tutorial
+            ? `<button type="button" class="ghost" data-action="reset-tutorial" data-testid="btn-reset-tutorial">Recommencer la mission</button>
+          <button type="button" class="ghost" data-action="home" data-testid="btn-end-home">Retour à l'accueil</button>`
+            : `<button type="button" class="ghost" data-action="replay" data-testid="btn-replay">Rejouer cette graine</button>
           <button type="button" class="ghost" data-action="new-game" data-testid="btn-end-new">Autre casse-tête</button>
-          <button type="button" class="ghost" data-action="home" data-testid="btn-end-home">Retour à l'accueil</button>
+          <button type="button" class="ghost" data-action="home" data-testid="btn-end-home">Retour à l'accueil</button>`}
         </div>
       </div>
     </div>`;
@@ -359,8 +529,24 @@ export function mount(root) {
   }
 
   function onKey(event) {
-    if (event.key === "Escape" && ui.howto) {
+    if (event.key !== "Escape") return;
+    if (ui.howto) {
       ui.howto = false;
+      paint();
+      return;
+    }
+    if (ui.explain) {
+      ui.explain = false;
+      paint();
+      return;
+    }
+    if (session && session.quitPrompt) {
+      applyTutorial(session, { type: "cancel-quit" });
+      paint();
+      return;
+    }
+    if (session && !session.exited && session.step !== "done") {
+      applyTutorial(session, { type: "request-quit" });
       paint();
     }
   }
@@ -377,6 +563,36 @@ export function mount(root) {
       case "start":
         begin({ seed: ui.seedInput || randomSeedString(), difficulty: ui.difficulty });
         break;
+      case "start-tutorial":
+        startTutorial();
+        break;
+      case "tutorial-continue":
+        if (session) applyTutorial(session, { type: "continue" });
+        paint();
+        break;
+      case "request-quit":
+        if (session) applyTutorial(session, { type: "request-quit" });
+        paint();
+        break;
+      case "cancel-quit":
+        if (session) applyTutorial(session, { type: "cancel-quit" });
+        paint();
+        break;
+      case "confirm-quit":
+        if (session) applyTutorial(session, { type: "confirm-quit" });
+        goMenu();
+        break;
+      case "reset-tutorial":
+        resetMission();
+        break;
+      case "open-explain":
+        if (state && isExplanationAllowed(state.phase)) ui.explain = true;
+        paint();
+        break;
+      case "close-explain":
+        ui.explain = false;
+        paint();
+        break;
       case "howto":
         ui.howto = true;
         paint();
@@ -386,7 +602,12 @@ export function mount(root) {
         paint();
         break;
       case "home":
-        goMenu();
+        if (session && !session.exited && session.step !== "done") {
+          applyTutorial(session, { type: "request-quit" });
+          paint();
+        } else {
+          goMenu();
+        }
         break;
       case "new-game":
         begin({ seed: randomSeedString(), difficulty: state ? state.difficulty : ui.difficulty });
@@ -397,27 +618,40 @@ export function mount(root) {
       case "copy":
         copyLink();
         break;
-      case "set-digit":
-        setDigit(state, Number(el.dataset.slot), Number(el.dataset.digit));
+      case "set-digit": {
+        const slot = Number(el.dataset.slot);
+        const digit = Number(el.dataset.digit);
+        if (session) applyTutorial(session, { type: "set-digit", slot, digit });
+        else setDigit(state, slot, digit);
         playSfx("click");
         paint();
         break;
-      case "toggle-fw":
-        toggleVerifier(state, Number(el.dataset.index));
+      }
+      case "toggle-fw": {
+        const index = Number(el.dataset.index);
+        if (session) applyTutorial(session, { type: "toggle-fw", index });
+        else toggleVerifier(state, index);
         playSfx("click");
         paint();
         break;
+      }
       case "query": {
-        const res = interrogate(state);
-        if (res.ok) playSfx("query");
+        const res = session
+          ? applyTutorial(session, { type: "query" })
+          : interrogate(state);
+        if (res && res.ok) playSfx("query");
         paint();
         break;
       }
       case "hack": {
-        const res = launchHack(state);
-        if (res.ok) {
-          playSfx(res.win ? "win" : "lose");
-          audio.enterResults(res.win ? "won" : "lost");
+        if (session) {
+          applyTutorial(session, { type: "hack" });
+        } else {
+          const res = launchHack(state);
+          if (res.ok) {
+            playSfx(res.win ? "win" : "lose");
+            audio.enterResults(res.win ? "won" : "lost");
+          }
         }
         paint();
         break;
@@ -426,14 +660,22 @@ export function mount(root) {
         audio.toggle();
         paint();
         break;
-      case "nb-digit":
-        toggleNotebookDigit(state, Number(el.dataset.slot), Number(el.dataset.digit));
+      case "nb-digit": {
+        const slot = Number(el.dataset.slot);
+        const digit = Number(el.dataset.digit);
+        if (session) applyTutorial(session, { type: "nb-digit", slot, digit });
+        else toggleNotebookDigit(state, slot, digit);
         paint();
         break;
-      case "nb-crit":
-        toggleNotebookCriterion(state, Number(el.dataset.index), el.dataset.crit);
+      }
+      case "nb-crit": {
+        const index = Number(el.dataset.index);
+        const criterionId = el.dataset.crit;
+        if (session) applyTutorial(session, { type: "nb-crit", index, criterionId });
+        else toggleNotebookCriterion(state, index, criterionId);
         paint();
         break;
+      }
       default:
         break;
     }

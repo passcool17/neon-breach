@@ -509,3 +509,75 @@ button {
   .logo-img { height: 34px; }
   .fw-card { min-height: 120px; }
 }
+
+
+.play.has-coach .coach {
+  grid-column: 1 / -1;
+}
+
+.coach h2,
+#welcome-title,
+#quit-title,
+#explain-title {
+  outline: none;
+}
+
+.coach h2:focus,
+#welcome-title:focus,
+#quit-title:focus,
+#explain-title:focus {
+  outline: 2px solid var(--cyan);
+  outline-offset: 4px;
+}
+
+.coach p {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.is-taught {
+  box-shadow: 0 0 0 2px var(--cyan), 0 0 18px rgba(0, 243, 255, 0.45);
+}
+
+.notebook.is-taught {
+  border-color: var(--cyan);
+}
+
+.warn {
+  color: var(--yellow);
+  line-height: 1.5;
+}
+
+.explain-list {
+  margin: 0 0 12px;
+  padding-left: 1.2em;
+}
+
+.explain-list li {
+  margin: 0 0 8px;
+  line-height: 1.5;
+}
+
+[data-testid="explain-panel"] .dialog {
+  width: min(720px, 100%);
+}
+
+[data-testid="explain-panel"] h3 {
+  margin: 16px 0 8px;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+
+[data-testid="btn-tutorial"] {
+  width: 100%;
+  text-align: center;
+  padding: 12px 18px;
+}
+
+@media (max-width: 960px) {
+  .play.has-coach .coach {
+    order: -1;
+  }
+}
