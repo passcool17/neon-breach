@@ -1,0 +1,9 @@
+{
+  "name": "neon-breach",
+  "private": true,
+  "type": "module",
+  "description": "Casse-t\u00eate de d\u00e9duction solo \u2014 labo de hacker n\u00e9on",
+  "scripts": {
+    "test": "node test/generator.test.js && node test/assets.test.js && node test/audio.test.js && node test/explain.test.js && node test/tutorial.test.js"
+  }
+}
