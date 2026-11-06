@@ -1,0 +1,9 @@
+{
+  "name": "neon-breach",
+  "private": true,
+  "type": "module",
+  "description": "Casse-tête de déduction solo — labo de hacker néon",
+  "scripts": {
+    "test": "node test/generator.test.js"
+  }
+}

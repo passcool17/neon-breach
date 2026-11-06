@@ -16,20 +16,30 @@ Quand tu penses tenir le code, tu lances **le piratage**. Bonne réponse : écra
 
 Les puzzles sont générés à l’infini (graine affichée à l’écran, partageable via `?seed=...&d=...`). Les meilleurs scores par difficulté restent dans le navigateur.
 
+Le générateur garantit : une seule solution parmi les 125 codes, chaque pare-feu est nécessaire, et chaque critère est distinguable dans sa famille — donc le casse-tête est déductible.
+
 ## Contrôles
 
-- Choisir la difficulté, éventuellement coller une graine, puis commencer.
-- Composer un code d’essai (▲ ■ ●, chiffres 1–5).
-- Cliquer jusqu’à 3 pare-feu, puis **Interroger**.
-- Cocher / barrer des pistes dans le calepin.
-- **Lancer le piratage** pour proposer un code final.
-- **Comment jouer** ouvre un rappel des règles.
+- À l’accueil : choisir Facile / Moyen / Difficile, éventuellement coller une graine, puis **Commencer l’intrusion**.
+- Composer un code d’essai en cliquant un chiffre (1–5) sous ▲, ■ et ●.
+- Cliquer jusqu’à 3 cartes de pare-feu (elles s’allument), puis **Interroger les pare-feu**.
+- Dans le **calepin**, cliquer un chiffre ou un critère pour le barrer (re-cliquer pour l’enlever).
+- **Lancer le piratage** envoie le code d’essai actuel comme proposition finale.
+- **Comment jouer** ouvre un rappel. **Copier le lien** partage la graine en cours.
+- **Nouvelle partie** tire une autre graine à la même difficulté. **Rejouer cette graine** recommence le même puzzle.
 
-Clavier : tout se joue à la souris ou au doigt. Le jeu est pensé mobile-first autant que bureau.
+Clavier : Escape ferme l’aide. Le reste se joue à la souris ou au doigt. Pensé pour le téléphone autant que le bureau.
+
+Partage : `https://passcool17.github.io/neon-breach/?seed=TA_GRAINE&d=facile` (ou `moyen` / `difficile`).
 
 ## État
 
-Dépôt tout frais : README + cette fiche seulement. La v1 n’est pas encore codée. GitHub Pages n’est pas activé.
+v1 jouable sur la branche `v1` (HTML / CSS / JS vanilla, pas de build, pas de Phaser).
+
+- Tests du générateur : `node test/generator.test.js` (120 graines × 3 difficultés, plus contrôles du catalogue).
+- GitHub Pages est servi depuis la branche **`v1`** à la racine : [https://passcool17.github.io/neon-breach/](https://passcool17.github.io/neon-breach/)
+- **Après la fusion de la PR dans `main`**, basculer Pages de `v1` vers `main`.
+- Visuels = placeholders CSS. Hooks `TODO(crea)` et `TODO(suno)` prêts pour l’art et la musique.
 
 ## Prochaines idées
 
