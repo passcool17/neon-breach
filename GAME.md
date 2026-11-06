@@ -37,9 +37,10 @@ Partage : `https://passcool17.github.io/neon-breach/?seed=TA_GRAINE&d=facile` (o
 v1 jouable sur la branche `v1` (HTML / CSS / JS vanilla, pas de build, pas de Phaser).
 
 - Tests du générateur : `node test/generator.test.js` (120 graines × 3 difficultés, plus contrôles du catalogue).
-- GitHub Pages est servi depuis la branche **`v1`** à la racine : [https://passcool17.github.io/neon-breach/](https://passcool17.github.io/neon-breach/)
+- GitHub Pages est **en ligne** (HTTP 200, vérifié le 6 novembre 2026 vers 10 h 59, heure de Toronto / America/Toronto), servi depuis la branche **`v1`** à la racine : [https://passcool17.github.io/neon-breach/](https://passcool17.github.io/neon-breach/)
 - **Après la fusion de la PR dans `main`**, basculer Pages de `v1` vers `main`.
 - Visuels = placeholders CSS. Hooks `TODO(crea)` et `TODO(suno)` prêts pour l’art et la musique.
+- PR : [https://github.com/passcool17/neon-breach/pull/1](https://github.com/passcool17/neon-breach/pull/1) — pas fusionnée, volontairement.
 
 ## Prochaines idées
 
