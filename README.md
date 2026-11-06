@@ -6,13 +6,18 @@ Jeu original (thème labo de hacker néon). Inspiré par la *mécanique* de déd
 
 - **Jouer** : [https://passcool17.github.io/neon-breach/](https://passcool17.github.io/neon-breach/) (GitHub Pages, servi depuis la branche `v1` en attendant la fusion dans `main`)
 - **Concept et contrôles** : [GAME.md](GAME.md)
+- **Médias** : [media/SOURCES.md](media/SOURCES.md) (visuels + audio fourni par l'utilisateur ; droits non vérifiés)
 - **Dépôt** : [github.com/passcool17/neon-breach](https://github.com/passcool17/neon-breach)
 
-Pour lancer les tests du générateur (Node, sans framework) :
+Le son est **coupé par défaut**. Un bouton « Son » (accessible, préférence mémorisée) l'allume ; la lecture part seulement après un clic.
+
+Pour lancer les tests (Node, sans framework) :
 
 ```bash
-node test/generator.test.js
+npm test
 ```
+
+(ou `node test/generator.test.js`, `node test/assets.test.js`, `node test/audio.test.js`)
 
 Aucun build n'est requis : ouvre `index.html` via un petit serveur local, ou joue en ligne.
 

@@ -21,6 +21,8 @@ import {
 } from "./game.js";
 import { DIGIT_MAX, DIGIT_MIN, SLOTS, formatCode } from "./criteria.js";
 import { randomSeedString } from "./rng.js";
+import { IMAGES, applySceneBackground, assetUrl, firewallIcon } from "./assets.js";
+import { createAudioController } from "./audio.js";
 
 function esc(value) {
   return String(value)
@@ -45,6 +47,16 @@ export function mount(root) {
     copied: false,
   };
   let state = null;
+  const audio = createAudioController();
+  applySceneBackground();
+
+  root.addEventListener("click", () => {
+    audio.noteGesture();
+  }, true);
+
+  document.addEventListener("visibilitychange", () => {
+    audio.setHidden(document.hidden);
+  });
 
   const boot = parseHashParams(window.location.search);
   ui.difficulty = boot.difficulty;
@@ -69,6 +81,7 @@ export function mount(root) {
       const next = new URL(window.location.href);
       next.search = buildShareSearch(state.seed, state.difficulty).replace(/^\?/, "");
       history.replaceState({}, "", next);
+      audio.enterPlay();
     } catch (err) {
       console.error(err);
       state = null;
@@ -83,6 +96,7 @@ export function mount(root) {
     ui.view = "menu";
     ui.howto = false;
     ui.toast = "";
+    audio.enterIdle();
     const next = new URL(window.location.href);
     next.search = "";
     history.replaceState({}, "", next);
@@ -107,15 +121,23 @@ export function mount(root) {
          <button type="button" class="ghost" data-action="new-game" data-testid="btn-new">Nouvelle partie</button>`
       : "";
     return `<header class="top">
-      <button type="button" class="brand" data-action="home" data-testid="btn-home" aria-label="Retour à l'accueil">
+      <button type="button" class="brand" data-action="home" data-testid="btn-home" aria-label="Néon Breach — retour à l'accueil">
         <span class="eyebrow">access node // labo d'intrusion</span>
-        <span class="logo">NÉON BREACH</span>
+        <img class="logo-img" src="${esc(assetUrl(IMAGES.logo))}" width="1200" height="300" alt="Néon Breach" data-testid="logo">
       </button>
       <div class="top-actions">
         ${playBits}
+        ${renderSoundToggle()}
         <button type="button" class="ghost" data-action="howto" data-testid="btn-howto">Comment jouer</button>
       </div>
     </header>`;
+  }
+
+  function renderSoundToggle() {
+    const on = audio.isEnabled();
+    const label = on ? "Son : on" : "Son : off";
+    const aria = on ? "Couper le son" : "Activer le son";
+    return `<button type="button" class="ghost sound-toggle" data-action="toggle-sound" data-testid="btn-sound" aria-pressed="${on ? "true" : "false"}" aria-label="${esc(aria)}">${esc(label)}</button>`;
   }
 
   function renderMenu() {
@@ -205,8 +227,12 @@ export function mount(root) {
       const kind = last.pass ? "is-yes" : "is-no";
       result = `<span class="fw-result ${kind}" data-testid="verifier-${verifier.letter}-result">${mark} ${esc(formatCode(last.code))}</span>`;
     }
+    const icon = firewallIcon(verifier.letter);
+    const iconTag = icon
+      ? `<img class="fw-icon" src="${esc(assetUrl(icon))}" width="48" height="48" alt="" data-testid="verifier-${verifier.letter}-icon">`
+      : "";
     return `<button type="button" class="fw-card ${selected}" data-action="toggle-fw" data-index="${index}" data-testid="verifier-${verifier.letter}">
-      <span class="fw-letter">Pare-feu ${esc(verifier.letter)}</span>
+      <span class="fw-head">${iconTag}<span class="fw-letter">Pare-feu ${esc(verifier.letter)}</span></span>
       <span class="fw-label">${esc(verifier.familyLabel)}</span>
       ${result}
     </button>`;
@@ -277,6 +303,7 @@ export function mount(root) {
         <p>Prends des notes dans le <strong>calepin</strong>, barre les possibilités mortes. Quand t'es confident, <strong>lance le piratage</strong>.</p>
         <p>Ton score = manches + requêtes. Plus c'est bas, mieux c'est. Une même graine + la même difficulté = le même casse-tête : partage le lien pour défier quelqu'un.</p>
         <p class="muted">Petite garantie du labo : y'a toujours une seule solution, chaque pare-feu sert à quelque chose, et c'est déductible. Pas de piège pourri.</p>
+        <p class="muted">Le son est coupé par défaut. Le bouton <strong>Son</strong> l'allume (après un clic à toi — rien ne part tout seul).</p>
         <button type="button" class="cta" data-action="close-howto" data-testid="btn-howto-close">Compris, j'entre</button>
       </div>
     </div>`;
@@ -301,8 +328,11 @@ export function mount(root) {
       : `<ul class="reveal" data-testid="reveal">${state.puzzle.verifiers
           .map((v) => `<li><strong>${esc(v.letter)}</strong> — ${esc(v.familyLabel)} : ${esc(chosenLabel(v))}</li>`)
           .join("")}</ul>`;
+    const banner = win ? IMAGES.win : IMAGES.lose;
+    const bannerAlt = win ? "Accès autorisé" : "Accès refusé";
     return `<div class="overlay" data-testid="${testId}" role="dialog">
       <div class="dialog ${win ? "is-win" : "is-lose"}">
+        <img class="end-banner" src="${esc(assetUrl(banner))}" width="1200" height="600" alt="${esc(bannerAlt)}" data-testid="${win ? "win-banner" : "lose-banner"}">
         <h2>${title}</h2>
         <p>${lead}</p>
         <p class="end-code">Code secret ${renderColoredCode(state.puzzle.solution)}</p>
@@ -385,10 +415,17 @@ export function mount(root) {
       }
       case "hack": {
         const res = launchHack(state);
-        if (res.ok) playSfx(res.win ? "win" : "lose");
+        if (res.ok) {
+          playSfx(res.win ? "win" : "lose");
+          audio.enterResults(res.win ? "won" : "lost");
+        }
         paint();
         break;
       }
+      case "toggle-sound":
+        audio.toggle();
+        paint();
+        break;
       case "nb-digit":
         toggleNotebookDigit(state, Number(el.dataset.slot), Number(el.dataset.digit));
         paint();

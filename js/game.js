@@ -204,5 +204,5 @@ export function chosenLabel(verifier) {
   return verifier.criteria.find((c) => c.id === verifier.chosenId)?.label ?? verifier.chosenId;
 }
 
-// TODO(suno): remplacer par de vrais SFX (query-yes, query-no, win, lose, click)
+// Hooks de SFX ponctuels (clic / requête) : pas de fichiers fournis. Victoire/échec : js/audio.js
 export function playSfx(_name) {}

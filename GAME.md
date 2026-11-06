@@ -27,6 +27,7 @@ Le générateur garantit : une seule solution parmi les 125 codes, chaque pare-f
 - **Lancer le piratage** envoie le code d’essai actuel comme proposition finale.
 - **Comment jouer** ouvre un rappel. **Copier le lien** partage la graine en cours.
 - **Nouvelle partie** tire une autre graine à la même difficulté. **Rejouer cette graine** recommence le même puzzle.
+- **Son : off / on** (dans l’en-tête) : coupé par défaut, préférence gardée dans ce navigateur-là. Rien ne joue avant que tu cliques. Le fond boucle doucement pendant une partie ; il s’arrête sur l’écran de victoire ou d’échec, remplacé par le jingle correspondant. Changer de partie ne superpose pas les pistes. Si tu changes d’onglet, ça se met en pause.
 
 Clavier : Escape ferme l’aide. Le reste se joue à la souris ou au doigt. Pensé pour le téléphone autant que le bureau.
 
@@ -36,15 +37,15 @@ Partage : `https://passcool17.github.io/neon-breach/?seed=TA_GRAINE&d=facile` (o
 
 v1 jouable sur la branche `v1` (HTML / CSS / JS vanilla, pas de build, pas de Phaser).
 
-- Tests du générateur : `node test/generator.test.js` (120 graines × 3 difficultés, plus contrôles du catalogue).
-- GitHub Pages est **en ligne** (HTTP 200, vérifié le 6 novembre 2026 vers 10 h 59, heure de Toronto / America/Toronto), servi depuis la branche **`v1`** à la racine : [https://passcool17.github.io/neon-breach/](https://passcool17.github.io/neon-breach/)
+- Tests : `npm test` (générateur, présence des médias, machine d’état audio).
+- GitHub Pages est servi depuis la branche **`v1`** à la racine : [https://passcool17.github.io/neon-breach/](https://passcool17.github.io/neon-breach/)
 - **Après la fusion de la PR dans `main`**, basculer Pages de `v1` vers `main`.
-- Visuels = placeholders CSS. Hooks `TODO(crea)` et `TODO(suno)` prêts pour l’art et la musique.
+- Visuels Créa intégrés : logo, fonds paysage/portrait (voile sombre pour le contraste), icônes de pare-feu A–F, bannières victoire/échec. `apercu.png` n’est pas dans le jeu.
+- Audio fourni par l’utilisateur (titres ID3 : *Silent Circuit* / *Access Granted* / *Access Denied*). Son coupé par défaut ; voir [media/SOURCES.md](media/SOURCES.md). **Les droits n’ont pas été vérifiés.**
 - PR : [https://github.com/passcool17/neon-breach/pull/1](https://github.com/passcool17/neon-breach/pull/1) — pas fusionnée, volontairement.
 
 ## Prochaines idées
 
-- Visuels pixel / glitch par Créa (les formes actuelles sont des placeholders CSS).
-- Musique et SFX par SUNO (hooks prévus, pas de sons dans la v1).
+- SFX ponctuels (clic, ✔/✖ d’une requête) : pas de fichiers fournis pour ça.
 - Plus de familles de pare-feu, quotidien partagé, replay animé d’une partie.
 - Après fusion de la PR v1 dans `main`, basculer GitHub Pages de la branche `v1` vers `main`.
