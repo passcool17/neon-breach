@@ -29,7 +29,7 @@ Le générateur garantit : une seule solution parmi les 125 codes, chaque pare-f
 - Après une victoire ou un échec, **Comprendre la solution** ouvre deux blocs distincts : d’abord l’élimination 125 → … avec les règles maintenant révélées (ce n’est pas « ce que tu aurais dû voir en jouant ») ; ensuite seulement ce que tes requêtes prouvaient. Si tu n’as posé aucune question, le deuxième bloc le dit clairement au lieu d’inventer une déduction.
 - **Comment jouer** ouvre un rappel. **Copier le lien** partage la graine en cours (absent pendant l’entraînement).
 - **Nouvelle partie** tire une autre graine à la même difficulté. **Rejouer cette graine** recommence le même puzzle.
-- **Son : off / on** (dans l’en-tête) : coupé par défaut, préférence gardée dans ce navigateur-là. Rien ne joue avant que tu cliques. Le fond boucle doucement pendant une partie ; il s’arrête sur l’écran de victoire ou d’échec, remplacé par le jingle correspondant. Changer de partie ne superpose pas les pistes. Si tu changes d’onglet, ça se met en pause.
+- **Son : on / off** (dans l’en-tête) : activé par défaut (si tu l'as déjà coupé dans ce navigateur-là, ça reste coupé). Le navigateur peut attendre un premier clic avant de lancer la lecture. Le fond boucle doucement pendant une partie ; il s’arrête sur l’écran de victoire ou d’échec, remplacé par le jingle correspondant. Changer de partie ne superpose pas les pistes. Si tu changes d’onglet, ça se met en pause.
 
 Clavier : Escape ferme d’abord l’aide, puis le panneau d’explication, puis ouvre (ou annule) le dialogue pour quitter l’entraînement. Le reste se joue à la souris ou au doigt. Pensé pour le téléphone autant que le bureau.
 
@@ -44,7 +44,7 @@ v1 jouable sur la branche `v1` (HTML / CSS / JS vanilla, pas de build, pas de Ph
 - GitHub Pages est servi depuis la branche **`v1`** à la racine : [https://passcool17.github.io/neon-breach/](https://passcool17.github.io/neon-breach/)
 - **Après la fusion de la PR dans `main`**, basculer Pages de `v1` vers `main`.
 - Visuels Créa intégrés : logo, fonds paysage/portrait (voile sombre pour le contraste), icônes de pare-feu A–F, bannières victoire/échec. `apercu.png` n’est pas dans le jeu.
-- Audio fourni par l’utilisateur (titres ID3 : *Silent Circuit* / *Access Granted* / *Access Denied*). Son coupé par défaut ; voir [media/SOURCES.md](media/SOURCES.md). **Les droits n’ont pas été vérifiés.**
+- Audio fourni par l’utilisateur (titres ID3 : *Silent Circuit* / *Access Granted* / *Access Denied*). Son activé par défaut (un premier clic peut être nécessaire) ; voir [media/SOURCES.md](media/SOURCES.md). **Les droits n’ont pas été vérifiés.**
 - PR : [https://github.com/passcool17/neon-breach/pull/1](https://github.com/passcool17/neon-breach/pull/1) — pas fusionnée, volontairement.
 
 ## Prochaines idées

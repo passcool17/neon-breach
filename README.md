@@ -9,7 +9,7 @@ Jeu original (thème labo de hacker néon). Inspiré par la *mécanique* de déd
 - **Médias** : [media/SOURCES.md](media/SOURCES.md) (visuels + audio fourni par l'utilisateur ; droits non vérifiés)
 - **Dépôt** : [github.com/passcool17/neon-breach](https://github.com/passcool17/neon-breach)
 
-Le son est **coupé par défaut**. Un bouton « Son » (accessible, préférence mémorisée) l'allume ; la lecture part seulement après un clic.
+Le son est **activé par défaut** (si tu l'as déjà coupé dans ce navigateur-là, ça reste coupé). Un bouton « Son » (accessible, préférence mémorisée) le coupe ou le rallume. Le navigateur peut attendre un premier clic avant de lancer la lecture.
 
 À l'accueil, **Mission d'entraînement** guide une partie fixe (FACILE1) étape par étape : tes records ne bougent pas, et le fond/jingle de partie notée ne part pas. En fin de partie (victoire ou échec, entraînement compris), **Comprendre la solution** sépare la lecture après révélation des règles de ce que tes requêtes prouvaient vraiment — y compris si tu n'as posé aucune question.
 

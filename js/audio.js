@@ -1,5 +1,5 @@
 /**
- * Contrôleur audio : coupé par défaut, geste requis, pas de pile de lecteurs.
+ * Contrôleur audio : activé par défaut, geste requis, pas de pile de lecteurs.
  * Les pistes sont identifiées par leurs titres ID3 (voir media/SOURCES.md).
  */
 
@@ -52,9 +52,11 @@ function defaultStorage() {
 
 export function readSoundPref(storage = defaultStorage()) {
   try {
-    return storage.getItem(SOUND_STORAGE_KEY) === "on";
+    const raw = storage.getItem(SOUND_STORAGE_KEY);
+    if (raw === null) return true;
+    return raw === "on";
   } catch {
-    return false;
+    return true;
   }
 }
 

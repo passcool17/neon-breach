@@ -67,17 +67,33 @@ async function suite() {
   console.log("▸ Préférence par défaut");
   {
     const storage = memoryStorage();
-    assert(readSoundPref(storage) === false, "sans clé : son coupé");
+    assert(readSoundPref(storage) === true, "sans clé : son activé");
     const ctrl = createAudioController({ Audio: FakeAudio, storage });
-    assert(ctrl.isEnabled() === false, "contrôleur : disabled par défaut");
+    assert(ctrl.isEnabled() === true, "contrôleur : enabled par défaut");
     await ctrl.enterPlay();
-    assert(FakeAudio.instances.length === 0, "aucune lecture sans activation");
+    assert(
+      !FakeAudio.instances.some((el) => !el.paused),
+      "aucune lecture avant geste malgré le défaut on",
+    );
   }
 
-  console.log("▸ Geste requis même si la préférence est on");
+  console.log("▸ Préférence persistée à off");
+  {
+    resetAudio();
+    const storage = memoryStorage({ [SOUND_STORAGE_KEY]: "off" });
+    assert(readSoundPref(storage) === false, "clé off : son coupé");
+    const ctrl = createAudioController({ Audio: FakeAudio, storage });
+    assert(ctrl.isEnabled() === false, "contrôleur : disabled si off persisté");
+    await ctrl.enterPlay();
+    await ctrl.noteGesture();
+    assert(FakeAudio.instances.length === 0, "off persisté : pas de lecture même après geste");
+  }
+
+  console.log("▸ Préférence persistée à on");
   {
     resetAudio();
     const storage = memoryStorage({ [SOUND_STORAGE_KEY]: "on" });
+    assert(readSoundPref(storage) === true, "clé on : son activé");
     const ctrl = createAudioController({ Audio: FakeAudio, storage });
     assert(ctrl.isEnabled() === true, "préférence on relue");
     await ctrl.enterPlay();

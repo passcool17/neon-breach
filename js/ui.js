@@ -464,7 +464,7 @@ export function mount(root) {
         <p>Prends des notes dans le <strong>calepin</strong>, barre les possibilités mortes. Quand t'es confident, <strong>lance le piratage</strong>.</p>
         <p>Ton score = manches + requêtes. Plus c'est bas, mieux c'est. Une même graine + la même difficulté = le même casse-tête : partage le lien pour défier quelqu'un.</p>
         <p class="muted">Petite garantie du labo : y'a toujours une seule solution, chaque pare-feu sert à quelque chose, et c'est déductible. Pas de piège pourri.</p>
-        <p class="muted">Le son est coupé par défaut. Le bouton <strong>Son</strong> l'allume (après un clic à toi — rien ne part tout seul).</p>
+        <p class="muted">Le son est activé par défaut. Le bouton <strong>Son</strong> le coupe ou le rallume. Le navigateur peut attendre un premier clic avant de lancer la lecture.</p>
         <button type="button" class="cta" data-action="close-howto" data-testid="btn-howto-close">Compris, j'entre</button>
       </div>
     </div>`;
